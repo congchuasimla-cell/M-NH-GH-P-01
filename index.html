@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò chơi Khởi động: Mảnh Ghép Gia Đình</title>
+    <style>
+        :root {
+            --bg-color: #FFF9F2;
+            --primary-color: #FF8A8A;
+            --pastel-yellow: #FFEAA7;
+            --pastel-orange: #FAB1A0;
+            --pastel-blue: #74B9FF;
+            --pastel-green: #55E6C1;
+            --text-color: #4A4A4A;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 3px solid #FFD3B6;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.3rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        /* Khung chứa bức tranh và mảnh ghép */
+        .game-zone {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .board-container {
+            position: relative;
+            width: 500px;
+            height: 350px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            background-color: #eee;
+        }
+
+        /* Bức ảnh gia đình ẩn bên dưới */
+        .secret-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Lưới 4 mảnh ghép che phía trên */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 2px;
+        }
+
+        .puzzle-piece {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+
+        .puzzle-piece:hover {
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+
+        /* Màu sắc rực rỡ riêng cho 4 mảnh ghép */
+        #piece-1 { background-color: var(--pastel-yellow); color: #d8a200; }
+        #piece-2 { background-color: var(--pastel-orange); color: #d65a31; }
+        #piece-3 { background-color: var(--pastel-blue); color: #005ea2; }
+        #piece-4 { background-color: var(--pastel-green); color: #00945b; }
+
+        /* Hiệu ứng biến mất khi mảnh ghép được lật mở */
+        .puzzle-piece.faded {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        /* Khung hiển thị câu hỏi bên cạnh */
+        .question-box {
+            flex: 1;
+            min-width: 300px;
+            background-color: #FFFDF9;
+            border: 2px dashed var(--primary-color);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: left;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .question-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .question-content {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            align-self: flex-start;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #ff6b6b;
+        }
+
+        .congrats-message {
+            display: none;
+            margin-top: 20px;
+            color: #2ecc71;
+            font-size: 1.4rem;
+            font-weight: bold;
+            animation: pop 0.5s easeInfinite;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧩 TRÒ CHƠI: MẢNH GHÉP GIA ĐÌNH</h1>
+    <p class="subtitle">Bấm vào từng mảnh ghép màu sắc trên bảng để lật mở câu hỏi tình huống nhé!</p>
+
+    <div class="game-zone">
+        <!-- Khu vực bảng hình ảnh và mảnh ghép -->
+        <div class="board-container">
+            <!-- Ảnh nền gia đình ăn cơm (Tên file: giadinh.jpg) -->
+            <img src="giadinh.jpg" alt="Gia đình hạnh phúc" class="secret-image">
+            
+            <div class="grid-overlay">
+                <div id="piece-1" class="puzzle-piece" onclick="showQuestion(1)">1</div>
+                <div id="piece-2" class="puzzle-piece" onclick="showQuestion(2)">2</div>
+                <div id="piece-3" class="puzzle-piece" onclick="showQuestion(3)">3</div>
+                <div id="piece-4" class="puzzle-piece" onclick="showQuestion(4)">4</div>
+            </div>
+        </div>
+
+        <!-- Khu vực hiển thị câu hỏi tương ứng khi bấm vào mảnh ghép -->
+        <div class="question-box" id="q-box">
+            <div class="question-title" id="q-title">🎯 Sẵn sàng chưa nào?</div>
+            <div class="question-content" id="q-text">Hãy click chọn một mảnh ghép bất kỳ (1, 2, 3 hoặc 4) trên bức tranh để bắt đầu khám phá bí mật thử thách đầu giờ!</div>
+            <button class="btn" id="q-btn" style="display:none;" onclick="fadePiece()">Mở mảnh ghép này</button>
+        </div>
+    </div>
+
+    <div class="congrats-message" id="congrats">
+        🎉 Bức tranh đã được lật mở hoàn toàn! Chào mừng cả lớp bước vào bài học "Mối quan hệ gia đình" ❤️
+    </div>
+</div>
+
+<script>
+    // Bộ dữ liệu 4 câu hỏi khởi động tương ứng với 4 mảnh ghép
+    const questions = {
+        1: "Món ăn nào mà cả nhà bạn thường cùng nhau quây quần thưởng thức nhất vào các ngày cuối tuần?",
+        2: "Ai là người hay cằn nhằn nhất nhà nhưng lại là người chuẩn bị quần áo, cơm nước chăm chút cho bạn chu đáo nhất?",
+        3: "Hãy kể tên một thiết bị công nghệ (như Tivi, máy tính, điện thoại...) mà cả nhà bạn thường dùng chung để giải trí cùng nhau?",
+        4: "Hành động quan tâm hoặc lời nói nào gần đây của bố mẹ khiến bạn cảm thấy ấm áp, hạnh phúc nhất?"
+    };
+
+    let currentSelectingPiece = null;
+    let openedPieces = 0;
+
+    function showQuestion(id) {
+        // Lưu lại mảnh ghép đang chọn để xử lý xóa đi sau đó
+        currentSelectingPiece = id;
+        
+        // Cập nhật nội dung sang ô bên cạnh
+        document.getElementById("q-title").innerText = `❓ CÂU HỎI MẢNH GHÉP SỐ ${id}`;
+        document.getElementById("q-text").innerText = questions[id];
+        
+        // Hiện nút xác nhận lật mở mảnh ghép
+        document.getElementById("q-btn").style.display = "block";
+    }
+
+    function fadePiece() {
+        if (currentSelectingPiece !== null) {
+            const piece = document.getElementById(`piece-${currentSelectingPiece}`);
+            
+            // Nếu mảnh ghép này chưa từng lật thì xử lý lật
+            if (!piece.classList.contains("faded")) {
+                piece.classList.add("faded");
+                openedPieces++;
+                
+                // Đổi trạng thái ô câu hỏi sau khi học sinh đã trả lời xong và lật hình
+                document.getElementById("q-title").innerText = "✨ Đã mở thành công!";
+                document.getElementById("q-text").innerText = "Mảnh hình nền đã lộ diện! Hãy tiếp tục bấm chọn các số còn lại trên bảng nhé.";
+                document.getElementById("q-btn").style.display = "none";
+                
+                // Kiểm tra xem đã mở hết cả 4 mảnh chưa
+                if (openedPieces === 4) {
+                    document.getElementById("congrats").style.display = "block";
+                    document.getElementById("q-box").style.backgroundColor = "#E8F5E9";
+                    document.getElementById("q-title").innerText = "🥳 THÀNH CÔNG!";
+                    document.getElementById("q-text").innerText = "Cả lớp đã xuất sắc lật mở toàn bộ bức tranh gia đình sum vầy bên mâm cơm ấm áp!";
+                }
+            }
+            currentSelectingPiece = null;
+        }
+    }
+</script>
+
+</body>
+</html>
+<img src="https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000" alt="Gia đình hạnh phúc" class="secret-image">
